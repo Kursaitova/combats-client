@@ -29,7 +29,11 @@ listRequest.onreadystatechange = function () {
 var fightRequest = new XMLHttpRequest();
 
 var fightResponse;
-var combatID = 'eoHSLl';
+// var combatId= 'eoHSLl';
+var combatId;
+var checkStatus;
+var statusRequest = new XMLHttpRequest();
+var waitPrompt = document.querySelector('.wait-prompt');
 fightRequest.onreadystatechange = function () {
     if (fightRequest.readyState !== 4) return;
     // console.log(fightRequest.responseText);
@@ -40,24 +44,20 @@ fightRequest.onreadystatechange = function () {
     } else {
         fightResponse = JSON.parse(fightRequest.responseText);
         console.log(fightResponse);
-        combatID = (fightResponse.combat) ? fightResponse.combat.id : 'eoHSLl';
-        console.log(combatID);
+        // combatId = (fightResponse.combat) ? fightResponse.combat.id : 'eoHSLl';
+        combatId = fightResponse.combat.id;
+        console.log(combatId);
+        
+        waitPrompt.textContent = 'Ждем второго игрока';
+
+        checkStatus = setInterval(function () {
+            statusRequest.open('GET', serverUrl + '/status?' + 'user_id=' + encodeURIComponent(localStorage.userToken)
+                + '&combat_id=' + encodeURIComponent(combatId), true);
+            statusRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            statusRequest.send();
+        }, 300);
     }
 }
-
-var btnStartFight = document.querySelector('.btn-start-fight');
-btnStartFight.addEventListener('click', function () {
-    console.log('btnStartFight clicked');
-    fightRequest.open('POST', serverUrl + '/fight', true);
-    fightRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    fightRequest.send('user_id=' + encodeURIComponent(localStorage.userToken));
-});
-
-var statusRequest = new XMLHttpRequest();
-statusRequest.open('GET', serverUrl + '/status?' + 'user_id=' + encodeURIComponent(localStorage.userToken)
-    + '&combat_id=' + encodeURIComponent(combatID), true);
-statusRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-statusRequest.send();
 
 var statusResponse;
 statusRequest.onreadystatechange = function () {
@@ -70,6 +70,20 @@ statusRequest.onreadystatechange = function () {
     } else {
         statusResponse = JSON.parse(statusRequest.responseText);
         console.log(statusResponse);
+
+        if(statusResponse.combat.status === 'progress'){
+            console.log('Game started!');
+            clearTimeout(checkStatus);
+            waitPrompt.textContent = 'Дождались!';
+        }
     }
 }
+
+var btnStartFight = document.querySelector('.btn-start-fight');
+btnStartFight.addEventListener('click', function () {
+    console.log('btnStartFight clicked');
+    fightRequest.open('POST', serverUrl + '/fight', true);
+    fightRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    fightRequest.send('user_id=' + encodeURIComponent(localStorage.userToken));
+});
 
