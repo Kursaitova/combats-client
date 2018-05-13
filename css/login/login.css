@@ -1,0 +1,12 @@
+.form {
+	width: 100%;
+	
+}
+
+.login {
+
+}
+
+.is-your-login-no, .is-your-login-yes {
+	display: none;
+}
